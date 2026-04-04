@@ -1,0 +1,6 @@
+@StockFlow.Core.Api_HostAddress = http://localhost:5174
+
+GET {{StockFlow.Core.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,57 @@
+# Build artifacts
+bin/
+obj/
+out/
+TestResults/
+artifacts/
+
+# User-specific files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+logs/
+
+# IDEs and editors
+.vs/
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# NuGet
+packages/
+*.nupkg
+
+# Coverage
+coverage/
+coverage-results/
+*.coverage
+*.coveragexml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node / frontend
+node_modules/
+dist/
+.npm/
+.pnpm-store/
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub/
+.pub-cache/
+build/
+
