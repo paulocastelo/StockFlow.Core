@@ -1,6 +1,61 @@
 @StockFlow.Core.Api_HostAddress = http://localhost:5174
+@categoryId = 00000000-0000-0000-0000-000000000000
+@productId = 00000000-0000-0000-0000-000000000000
 
-GET {{StockFlow.Core.Api_HostAddress}}/weatherforecast/
+GET {{StockFlow.Core.Api_HostAddress}}/api/health
 Accept: application/json
 
 ###
+
+GET {{StockFlow.Core.Api_HostAddress}}/api/categories
+Accept: application/json
+
+###
+
+POST {{StockFlow.Core.Api_HostAddress}}/api/categories
+Content-Type: application/json
+
+{
+  "name": "Peripherals",
+  "description": "Devices and accessories"
+}
+
+###
+
+GET {{StockFlow.Core.Api_HostAddress}}/api/products
+Accept: application/json
+
+###
+
+POST {{StockFlow.Core.Api_HostAddress}}/api/products
+Content-Type: application/json
+
+{
+  "categoryId": "{{categoryId}}",
+  "name": "Wireless Mouse",
+  "sku": "MOU-001",
+  "unitPrice": 89.90
+}
+
+###
+
+POST {{StockFlow.Core.Api_HostAddress}}/api/stock-movements
+Content-Type: application/json
+
+{
+  "productId": "{{productId}}",
+  "type": 1,
+  "quantity": 10,
+  "reason": "Initial stock",
+  "performedByUserId": null
+}
+
+###
+
+GET {{StockFlow.Core.Api_HostAddress}}/api/stock-movements/product/{{productId}}
+Accept: application/json
+
+###
+
+GET {{StockFlow.Core.Api_HostAddress}}/api/stock-movements/product/{{productId}}/balance
+Accept: application/json

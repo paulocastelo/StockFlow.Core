@@ -12,6 +12,10 @@ public sealed class StockMovement : Entity
     public Guid? PerformedByUserId { get; private set; }
     public DateTimeOffset OccurredAtUtc { get; private set; }
 
+    private StockMovement()
+    {
+    }
+
     public StockMovement(
         Guid productId,
         StockMovementType type,

@@ -58,3 +58,26 @@ Show full stack product delivery with a clean architecture and a realistic busin
 
 This project should be the most polished one in the portfolio.
 
+## Current Backend MVP
+
+The backend foundation is already in place with:
+
+- ASP.NET Core Web API
+- layered structure with `Domain`, `Application`, `Infrastructure`, and `Api`
+- PostgreSQL persistence with EF Core
+- initial migration for the database schema
+- endpoints for categories, products, stock movements, and stock balance
+- rule validation for stock exits
+- unit tests for balance calculation and stock movement rules
+
+## Backend Structure
+
+- `backend/src/StockFlow.Core.Api`
+- `backend/src/StockFlow.Core.Application`
+- `backend/src/StockFlow.Core.Domain`
+- `backend/src/StockFlow.Core.Infrastructure`
+- `backend/tests/StockFlow.Core.UnitTests`
+
+## Local Development
+
+See [docs/backend/LOCAL-SETUP.md](C:/projetos/GitPortfolio/StockFlow.Core/docs/backend/LOCAL-SETUP.md) for PostgreSQL setup, migrations, and API run instructions.

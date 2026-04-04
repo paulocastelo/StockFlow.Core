@@ -8,6 +8,12 @@ public sealed class AppUser : Entity
     public string Email { get; private set; }
     public bool IsActive { get; private set; }
 
+    private AppUser()
+    {
+        FullName = string.Empty;
+        Email = string.Empty;
+    }
+
     public AppUser(string fullName, string email)
     {
         FullName = string.IsNullOrWhiteSpace(fullName)
