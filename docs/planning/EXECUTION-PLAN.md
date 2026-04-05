@@ -44,6 +44,8 @@ Initial functional scope:
 
 Goal: define the core structure of the system before feature implementation.
 
+Status: completed
+
 Deliverables:
 
 - domain definition
@@ -58,9 +60,17 @@ Exit criteria:
 - main entities are named and documented
 - execution order is clear
 
+Completed work:
+
+- backend solution structure created
+- domain entities defined
+- planning and domain documentation created
+
 ### Phase 2. Backend MVP
 
 Goal: create a functional backend that supports the main stock flow.
+
+Status: completed
 
 Deliverables:
 
@@ -79,9 +89,19 @@ Exit criteria:
 - database schema is stable for MVP
 - primary inventory use cases are functional
 
+Completed work:
+
+- ASP.NET Core API implemented
+- PostgreSQL persistence configured with EF Core
+- initial and auth-related migrations created
+- categories, products, stock movements, and balance endpoints implemented
+- local database updated successfully
+
 ### Phase 3. Authentication and Authorization
 
 Goal: secure the application with a simple but solid user access model.
+
+Status: completed
 
 Deliverables:
 
@@ -96,9 +116,18 @@ Exit criteria:
 - protected resources require authentication
 - auth configuration is documented
 
+Completed work:
+
+- register and login endpoints implemented
+- JWT token generation configured
+- protected endpoints enabled for business APIs
+- password hashing added for application users
+
 ### Phase 4. Testing and API Documentation
 
 Goal: improve confidence and usability of the backend.
+
+Status: completed
 
 Deliverables:
 
@@ -112,9 +141,18 @@ Exit criteria:
 - critical flows have automated coverage
 - API surface is explorable and documented
 
+Completed work:
+
+- unit tests expanded for stock and auth flows
+- Swagger UI configured with Bearer token support
+- local setup guide updated
+- HTTP request samples updated
+
 ### Phase 5. Web Frontend
 
 Goal: provide a web interface for the main operational flows.
+
+Status: in progress
 
 Deliverables:
 
@@ -128,6 +166,13 @@ Exit criteria:
 
 - main user flows are usable from the web app
 - frontend integrates cleanly with the API
+
+Completed work:
+
+- React + Vite frontend scaffolded
+- JWT-based sign-in and registration flows connected to the API
+- initial screens for categories, products, stock movements, and balance/history built
+- frontend build and lint passing
 
 ### Phase 6. Flutter Mobile App
 
@@ -224,5 +269,4 @@ Repository polished for public presentation.
 
 ## Next Action
 
-The next implementation step should be domain definition and backend scaffolding for `StockFlow.Core`.
-
+The next implementation step should be refining the web frontend MVP for `StockFlow.Core`, including better UX polish, edit flows, and tighter end-to-end integration details.

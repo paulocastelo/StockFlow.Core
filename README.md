@@ -66,9 +66,28 @@ The backend foundation is already in place with:
 - layered structure with `Domain`, `Application`, `Infrastructure`, and `Api`
 - PostgreSQL persistence with EF Core
 - initial migration for the database schema
+- JWT authentication with register and login flows
+- Swagger UI with Bearer token support
 - endpoints for categories, products, stock movements, and stock balance
 - rule validation for stock exits
 - unit tests for balance calculation and stock movement rules
+
+## Current Frontend MVP
+
+The web frontend is now scaffolded with React + Vite and already includes:
+
+- login and registration flows
+- category creation and listing
+- product creation and listing
+- stock movement registration
+- balance and movement history lookup
+- JWT session persistence in the browser
+
+## Frontend Structure
+
+- `frontend/src`
+- `frontend/.env.example`
+- `frontend/README.md`
 
 ## Backend Structure
 
@@ -81,3 +100,4 @@ The backend foundation is already in place with:
 ## Local Development
 
 See [docs/backend/LOCAL-SETUP.md](C:/projetos/GitPortfolio/StockFlow.Core/docs/backend/LOCAL-SETUP.md) for PostgreSQL setup, migrations, and API run instructions.
+See [frontend/README.md](C:/projetos/GitPortfolio/StockFlow.Core/frontend/README.md) for frontend setup and environment configuration.

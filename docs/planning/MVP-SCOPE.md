@@ -14,6 +14,25 @@ This document defines what should be included in the first usable version of `St
 - API documentation
 - basic unit tests
 
+## Current Status
+
+Already completed in the backend:
+
+- user registration and login API
+- JWT authentication
+- category management API
+- product management API
+- stock movement API
+- stock balance API
+- Swagger documentation
+- unit tests for key business and auth flows
+
+Still pending for the MVP:
+
+- UX refinement for the web frontend
+- edit and maintenance flows in the web UI
+- stronger end-to-end validation of the browser flows against the local API
+
 ## Out Of Scope For The First Version
 
 - multi-warehouse support
@@ -38,4 +57,3 @@ The MVP is successful when:
 ## Guiding Rule
 
 If a feature does not strengthen the core inventory flow for the first public version, it should be postponed.
-
