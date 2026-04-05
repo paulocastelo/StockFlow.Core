@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StockFlow.Core.Application.Categories.Contracts;
 using StockFlow.Core.Application.Categories.Services;
@@ -6,6 +7,7 @@ namespace StockFlow.Core.Api.Controllers;
 
 [ApiController]
 [Route("api/categories")]
+[Authorize]
 public sealed class CategoriesController : ControllerBase
 {
     private readonly ICategoryAppService _categoryAppService;

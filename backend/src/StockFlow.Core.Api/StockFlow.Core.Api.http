@@ -1,19 +1,43 @@
 @StockFlow.Core.Api_HostAddress = http://localhost:5174
 @categoryId = 00000000-0000-0000-0000-000000000000
 @productId = 00000000-0000-0000-0000-000000000000
+@token = replace-with-jwt
 
 GET {{StockFlow.Core.Api_HostAddress}}/api/health
 Accept: application/json
 
 ###
 
+POST {{StockFlow.Core.Api_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "fullName": "Paulo Castelo",
+  "email": "paulo@example.com",
+  "password": "Pa$$word123"
+}
+
+###
+
+POST {{StockFlow.Core.Api_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "paulo@example.com",
+  "password": "Pa$$word123"
+}
+
+###
+
 GET {{StockFlow.Core.Api_HostAddress}}/api/categories
 Accept: application/json
+Authorization: Bearer {{token}}
 
 ###
 
 POST {{StockFlow.Core.Api_HostAddress}}/api/categories
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "name": "Peripherals",
@@ -24,11 +48,13 @@ Content-Type: application/json
 
 GET {{StockFlow.Core.Api_HostAddress}}/api/products
 Accept: application/json
+Authorization: Bearer {{token}}
 
 ###
 
 POST {{StockFlow.Core.Api_HostAddress}}/api/products
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "categoryId": "{{categoryId}}",
@@ -41,6 +67,7 @@ Content-Type: application/json
 
 POST {{StockFlow.Core.Api_HostAddress}}/api/stock-movements
 Content-Type: application/json
+Authorization: Bearer {{token}}
 
 {
   "productId": "{{productId}}",
@@ -54,8 +81,10 @@ Content-Type: application/json
 
 GET {{StockFlow.Core.Api_HostAddress}}/api/stock-movements/product/{{productId}}
 Accept: application/json
+Authorization: Bearer {{token}}
 
 ###
 
 GET {{StockFlow.Core.Api_HostAddress}}/api/stock-movements/product/{{productId}}/balance
 Accept: application/json
+Authorization: Bearer {{token}}

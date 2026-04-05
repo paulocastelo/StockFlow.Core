@@ -20,6 +20,10 @@ public sealed class AppUserConfiguration : IEntityTypeConfiguration<AppUser>
             .HasMaxLength(180)
             .IsRequired();
 
+        builder.Property(user => user.PasswordHash)
+            .HasMaxLength(500)
+            .IsRequired();
+
         builder.HasIndex(user => user.Email)
             .IsUnique();
     }

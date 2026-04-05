@@ -1,3 +1,4 @@
+using StockFlow.Core.Application.Auth.Services;
 using StockFlow.Core.Application.Categories.Services;
 using Microsoft.Extensions.DependencyInjection;
 using StockFlow.Core.Application.Inventory.Services;
@@ -10,6 +11,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
+        services.AddScoped<IAuthAppService, AuthAppService>();
         services.AddScoped<IInventoryBalanceAppService, InventoryBalanceAppService>();
         services.AddScoped<ICategoryAppService, CategoryAppService>();
         services.AddScoped<IProductAppService, ProductAppService>();

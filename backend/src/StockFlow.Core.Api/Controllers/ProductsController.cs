@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StockFlow.Core.Application.Products.Contracts;
 using StockFlow.Core.Application.Products.Services;
@@ -6,6 +7,7 @@ namespace StockFlow.Core.Api.Controllers;
 
 [ApiController]
 [Route("api/products")]
+[Authorize]
 public sealed class ProductsController : ControllerBase
 {
     private readonly IProductAppService _productAppService;

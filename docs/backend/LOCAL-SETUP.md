@@ -32,6 +32,31 @@ dotnet dotnet-ef database update `
 dotnet run --project backend/src/StockFlow.Core.Api
 ```
 
+After the API starts, Swagger UI should be available at:
+
+```text
+https://localhost:7xxx/swagger
+http://localhost:5xxx/swagger
+```
+
+## JWT Configuration
+
+The API expects a `Jwt` section in the app settings files. A development placeholder is already present, but the signing key should be changed before any non-local use.
+
+## Authentication Endpoints
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+
+## Using JWT In Swagger
+
+1. Register a user with `POST /api/auth/register`.
+2. Login with `POST /api/auth/login`.
+3. Copy the returned `accessToken`.
+4. Click the `Authorize` button in Swagger.
+5. Paste only the token value.
+6. Call the protected endpoints normally.
+
 ## Available MVP Endpoints
 
 - `GET /api/health`

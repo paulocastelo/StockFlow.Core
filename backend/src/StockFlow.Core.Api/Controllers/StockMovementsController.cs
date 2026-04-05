@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using StockFlow.Core.Application.StockMovements.Contracts;
 using StockFlow.Core.Application.StockMovements.Services;
@@ -6,6 +7,7 @@ namespace StockFlow.Core.Api.Controllers;
 
 [ApiController]
 [Route("api/stock-movements")]
+[Authorize]
 public sealed class StockMovementsController : ControllerBase
 {
     private readonly IStockMovementAppService _stockMovementAppService;
