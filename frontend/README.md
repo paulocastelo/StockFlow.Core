@@ -18,6 +18,8 @@ Create a `.env.local` file if you want to override the API base URL:
 VITE_API_BASE_URL=http://localhost:5174
 ```
 
+If `VITE_API_BASE_URL` is omitted, the Vite dev server will proxy `/api` requests to `http://localhost:5174`.
+
 ## Run
 
 ```powershell

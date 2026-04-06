@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useState } from 'react'
+import { startTransition, useDeferredValue, useEffect, useEffectEvent, useState } from 'react'
 import './App.css'
 
 type Section = 'overview' | 'categories' | 'products' | 'movements'
@@ -57,13 +57,37 @@ type ApiRequestOptions = {
   body?: unknown
 }
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5174'
+type SectionMeta = {
+  title: string
+  description: string
+}
+
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
 
 const emptyLogin = { email: '', password: '' }
 const emptyRegister = { fullName: '', email: '', password: '' }
 const emptyCategory = { name: '', description: '' }
 const emptyProduct = { categoryId: '', name: '', sku: '', unitPrice: '0' }
 const emptyMovement = { productId: '', type: '1', quantity: '1', reason: '' }
+
+const sectionMeta: Record<Section, SectionMeta> = {
+  overview: {
+    title: 'Operational overview',
+    description: 'Track readiness, inspect inventory balance, and keep the main workflow visible at a glance.',
+  },
+  categories: {
+    title: 'Category management',
+    description: 'Organize inventory structure before creating products and downstream stock activity.',
+  },
+  products: {
+    title: 'Product management',
+    description: 'Register sellable items, maintain their metadata, and control whether they stay operational.',
+  },
+  movements: {
+    title: 'Stock movements',
+    description: 'Record entries and exits against active products while watching current balance and history.',
+  },
+}
 
 function App() {
   const [activeSection, setActiveSection] = useState<Section>('overview')
@@ -81,6 +105,8 @@ function App() {
   const [balance, setBalance] = useState<StockBalance | null>(null)
 
   const [selectedProductId, setSelectedProductId] = useState('')
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [categorySearch, setCategorySearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const deferredCategorySearch = useDeferredValue(categorySearch)
@@ -93,8 +119,23 @@ function App() {
   const [movementForm, setMovementForm] = useState(emptyMovement)
 
   const [isBootstrapping, setIsBootstrapping] = useState(false)
+  const [isLoadingInsights, setIsLoadingInsights] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
+
+  const handleApiError = (error: unknown, clearExpiredSession: boolean) => {
+    if (error instanceof ApiError && error.status === 401 && clearExpiredSession) {
+      clearSession()
+      setFeedback({ tone: 'error', message: 'Your session expired or is invalid. Please sign in again.' })
+      return
+    }
+
+    setFeedback({ tone: 'error', message: getErrorMessage(error) })
+  }
+
+  const handleApiErrorEvent = useEffectEvent((error: unknown, clearExpiredSession: boolean) => {
+    handleApiError(error, clearExpiredSession)
+  })
 
   useEffect(() => {
     if (!token) {
@@ -134,8 +175,7 @@ function App() {
         })
       } catch (error) {
         if (!cancelled) {
-          setFeedback({ tone: 'error', message: getErrorMessage(error) })
-          clearSession()
+          handleApiErrorEvent(error, true)
         }
       } finally {
         if (!cancelled) {
@@ -161,6 +201,8 @@ function App() {
     let cancelled = false
 
     async function loadProductInsights() {
+      setIsLoadingInsights(true)
+
       try {
         const [loadedMovements, loadedBalance] = await Promise.all([
           apiRequest<StockMovement[]>(`/api/stock-movements/product/${selectedProductId}`, { token }),
@@ -175,7 +217,11 @@ function App() {
         setBalance(loadedBalance)
       } catch (error) {
         if (!cancelled) {
-          setFeedback({ tone: 'error', message: getErrorMessage(error) })
+          handleApiErrorEvent(error, false)
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingInsights(false)
         }
       }
     }
@@ -219,6 +265,16 @@ function App() {
 
   const stockEntries = movements.filter((movement) => movement.type === 1).reduce((total, movement) => total + movement.quantity, 0)
   const stockExits = movements.filter((movement) => movement.type === 2).reduce((total, movement) => total + movement.quantity, 0)
+  const activeProducts = products.filter((product) => product.isActive)
+  const selectedProduct = products.find((product) => product.id === selectedProductId) ?? null
+  const currentSection = sectionMeta[activeSection]
+  const readinessItems = [
+    { label: 'Authenticated session', done: Boolean(token && user) },
+    { label: 'At least one category created', done: categories.length > 0 },
+    { label: 'At least one product created', done: products.length > 0 },
+    { label: 'At least one active product available', done: activeProducts.length > 0 },
+  ]
+  const completedReadinessCount = readinessItems.filter((item) => item.done).length
 
   function persistSession(response: AuthResponse) {
     localStorage.setItem('stockflow.token', response.accessToken)
@@ -274,7 +330,7 @@ function App() {
       setFeedback({ tone: 'success', message: 'Welcome back. Your session is ready.' })
       setLoginForm(emptyLogin)
     } catch (error) {
-      setFeedback({ tone: 'error', message: getErrorMessage(error) })
+      handleApiError(error, false)
     } finally {
       setIsSubmitting(false)
     }
@@ -294,61 +350,85 @@ function App() {
       setRegisterForm(emptyRegister)
       setAuthMode('login')
     } catch (error) {
-      setFeedback({ tone: 'error', message: getErrorMessage(error) })
+      handleApiError(error, false)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  async function handleCreateCategory(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSaveCategory(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!token) return
 
     setIsSubmitting(true)
     try {
-      await apiRequest('/api/categories', {
-        method: 'POST',
-        token,
-        body: categoryForm,
-      })
+      if (editingCategoryId) {
+        await apiRequest(`/api/categories/${editingCategoryId}`, {
+          method: 'PUT',
+          token,
+          body: categoryForm,
+        })
+
+        setFeedback({ tone: 'success', message: 'Category updated successfully.' })
+      } else {
+        await apiRequest('/api/categories', {
+          method: 'POST',
+          token,
+          body: categoryForm,
+        })
+
+        setFeedback({ tone: 'success', message: 'Category created successfully.' })
+      }
 
       await reloadCategories()
-      setCategoryForm(emptyCategory)
-      setFeedback({ tone: 'success', message: 'Category created successfully.' })
+      resetCategoryForm()
     } catch (error) {
-      setFeedback({ tone: 'error', message: getErrorMessage(error) })
+      handleApiError(error, true)
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  async function handleCreateProduct(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSaveProduct(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!token) return
 
     setIsSubmitting(true)
     try {
-      await apiRequest('/api/products', {
-        method: 'POST',
-        token,
-        body: {
-          categoryId: productForm.categoryId,
-          name: productForm.name,
-          sku: productForm.sku,
-          unitPrice: Number(productForm.unitPrice),
-        },
-      })
+      const payload = {
+        categoryId: productForm.categoryId,
+        name: productForm.name,
+        sku: productForm.sku,
+        unitPrice: Number(productForm.unitPrice),
+      }
+
+      if (editingProductId) {
+        const currentProduct = products.find((product) => product.id === editingProductId)
+
+        await apiRequest(`/api/products/${editingProductId}`, {
+          method: 'PUT',
+          token,
+          body: {
+            ...payload,
+            isActive: currentProduct?.isActive ?? true,
+          },
+        })
+
+        setFeedback({ tone: 'success', message: 'Product updated successfully.' })
+      } else {
+        await apiRequest('/api/products', {
+          method: 'POST',
+          token,
+          body: payload,
+        })
+
+        setFeedback({ tone: 'success', message: 'Product created successfully.' })
+      }
 
       await reloadProducts()
-      setProductForm({
-        categoryId: categories[0]?.id ?? '',
-        name: '',
-        sku: '',
-        unitPrice: '0',
-      })
-      setFeedback({ tone: 'success', message: 'Product created successfully.' })
+      resetProductForm()
     } catch (error) {
-      setFeedback({ tone: 'error', message: getErrorMessage(error) })
+      handleApiError(error, true)
     } finally {
       setIsSubmitting(false)
     }
@@ -377,7 +457,66 @@ function App() {
       setMovementForm((previous) => ({ ...previous, quantity: '1', reason: '' }))
       setFeedback({ tone: 'success', message: 'Stock movement recorded successfully.' })
     } catch (error) {
-      setFeedback({ tone: 'error', message: getErrorMessage(error) })
+      handleApiError(error, true)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleDeleteCategory(category: Category) {
+    if (!token) return
+
+    const shouldDelete = window.confirm(`Delete category "${category.name}"? This action cannot be undone.`)
+    if (!shouldDelete) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      await apiRequest(`/api/categories/${category.id}`, {
+        method: 'DELETE',
+        token,
+      })
+
+      if (editingCategoryId === category.id) {
+        resetCategoryForm()
+      }
+
+      await reloadCategories()
+      setFeedback({ tone: 'success', message: 'Category deleted successfully.' })
+    } catch (error) {
+      handleApiError(error, true)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  async function handleToggleProductStatus(product: Product) {
+    if (!token) return
+
+    const nextIsActive = !product.isActive
+
+    setIsSubmitting(true)
+    try {
+      await apiRequest(`/api/products/${product.id}`, {
+        method: 'PUT',
+        token,
+        body: {
+          categoryId: product.categoryId,
+          name: product.name,
+          sku: product.sku,
+          unitPrice: product.unitPrice,
+          isActive: nextIsActive,
+        },
+      })
+
+      await reloadProducts()
+      setFeedback({
+        tone: 'success',
+        message: `Product ${nextIsActive ? 'activated' : 'inactivated'} successfully.`,
+      })
+    } catch (error) {
+      handleApiError(error, true)
     } finally {
       setIsSubmitting(false)
     }
@@ -387,6 +526,43 @@ function App() {
     startTransition(() => {
       setActiveSection(section)
     })
+  }
+
+  function startCategoryEdit(category: Category) {
+    setEditingCategoryId(category.id)
+    setCategoryForm({
+      name: category.name,
+      description: category.description ?? '',
+    })
+  }
+
+  function resetCategoryForm() {
+    setEditingCategoryId(null)
+    setCategoryForm(emptyCategory)
+  }
+
+  function startProductEdit(product: Product) {
+    setEditingProductId(product.id)
+    setProductForm({
+      categoryId: product.categoryId,
+      name: product.name,
+      sku: product.sku,
+      unitPrice: String(product.unitPrice),
+    })
+  }
+
+  function resetProductForm() {
+    setEditingProductId(null)
+    setProductForm({
+      categoryId: categories[0]?.id ?? '',
+      name: '',
+      sku: '',
+      unitPrice: '0',
+    })
+  }
+
+  function getCategoryName(categoryId: string) {
+    return categories.find((category) => category.id === categoryId)?.name ?? 'Unassigned category'
   }
 
   return (
@@ -522,6 +698,21 @@ function App() {
             <button className={activeSection === 'movements' ? 'is-active' : ''} onClick={() => changeSection('movements')}>Movements</button>
           </nav>
 
+          <div className="section-summary">
+            <div>
+              <span className="panel-kicker">Current focus</span>
+              <h3>{currentSection.title}</h3>
+              <p>{currentSection.description}</p>
+            </div>
+            {token ? (
+              <span className="summary-pill">
+                {completedReadinessCount}/{readinessItems.length} readiness checks complete
+              </span>
+            ) : (
+              <span className="summary-pill">Sign in to unlock operational flows</span>
+            )}
+          </div>
+
           {isBootstrapping ? <div className="empty-state">Loading inventory data...</div> : null}
           {!token ? <div className="empty-state">Sign in to load categories, products, and stock movement data.</div> : null}
 
@@ -547,7 +738,29 @@ function App() {
 
                 <div className="balance-strip">
                   <div><span>Current balance</span><strong>{balance?.currentBalance ?? 0}</strong></div>
-                  <div><span>Tracked movements</span><strong>{movements.length}</strong></div>
+                  <div><span>Tracked movements</span><strong>{isLoadingInsights ? '...' : movements.length}</strong></div>
+                </div>
+
+                <div className="helper-note">
+                  {selectedProduct ? `${selectedProduct.name} is currently ${selectedProduct.isActive ? 'active' : 'inactive'} for operations.` : 'Create a product to start tracking operational balance.'}
+                </div>
+              </article>
+
+              <article className="wide-card">
+                <div className="panel-header">
+                  <div>
+                    <span className="panel-kicker">Readiness</span>
+                    <h3>Operational checklist</h3>
+                  </div>
+                </div>
+
+                <div className="checklist-grid">
+                  {readinessItems.map((item) => (
+                    <article key={item.label} className={`checklist-card ${item.done ? 'checklist-card--done' : ''}`}>
+                      <strong>{item.done ? 'Done' : 'Pending'}</strong>
+                      <p>{item.label}</p>
+                    </article>
+                  ))}
                 </div>
               </article>
             </section>
@@ -556,11 +769,14 @@ function App() {
           {token && !isBootstrapping && activeSection === 'categories' ? (
             <section className="section-grid section-grid--split">
               <article className="surface nested-surface">
-                <div className="panel-header"><div><span className="panel-kicker">Create</span><h3>New category</h3></div></div>
-                <form className="stack-form" onSubmit={handleCreateCategory}>
+                <div className="panel-header">
+                  <div><span className="panel-kicker">{editingCategoryId ? 'Maintain' : 'Create'}</span><h3>{editingCategoryId ? 'Edit category' : 'New category'}</h3></div>
+                  {editingCategoryId ? <button className="ghost-button" type="button" onClick={resetCategoryForm}>Cancel</button> : null}
+                </div>
+                <form className="stack-form" onSubmit={handleSaveCategory}>
                   <label>Name<input type="text" value={categoryForm.name} onChange={(event) => setCategoryForm((previous) => ({ ...previous, name: event.target.value }))} required /></label>
                   <label>Description<textarea rows={4} value={categoryForm.description} onChange={(event) => setCategoryForm((previous) => ({ ...previous, description: event.target.value }))} /></label>
-                  <button className="primary-button" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save category'}</button>
+                  <button className="primary-button" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : editingCategoryId ? 'Update category' : 'Save category'}</button>
                 </form>
               </article>
 
@@ -568,9 +784,18 @@ function App() {
                 <div className="panel-header"><div><span className="panel-kicker">Browse</span><h3>Category catalog</h3></div></div>
                 <input className="search-input" type="search" placeholder="Search categories" value={categorySearch} onChange={(event) => setCategorySearch(event.target.value)} />
                 <div className="list-shell">
-                  {filteredCategories.length === 0 ? <div className="empty-state compact">No categories found for this filter.</div> : filteredCategories.map((category) => (
-                    <article key={category.id} className="list-card">
+                  {categories.length === 0 ? (
+                    <div className="empty-state compact">
+                      <strong>No categories yet.</strong>
+                      <p>Create your first category to unlock product registration.</p>
+                    </div>
+                  ) : filteredCategories.length === 0 ? <div className="empty-state compact">No categories found for this filter.</div> : filteredCategories.map((category) => (
+                    <article key={category.id} className={`list-card ${editingCategoryId === category.id ? 'list-card--active' : ''}`}>
                       <div><strong>{category.name}</strong><p>{category.description ?? 'No description yet.'}</p></div>
+                      <div className="inline-actions">
+                        <button className="ghost-button" type="button" onClick={() => startCategoryEdit(category)}>Edit</button>
+                        <button className="danger-button" type="button" onClick={() => void handleDeleteCategory(category)} disabled={isSubmitting}>Delete</button>
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -581,8 +806,11 @@ function App() {
           {token && !isBootstrapping && activeSection === 'products' ? (
             <section className="section-grid section-grid--split">
               <article className="surface nested-surface">
-                <div className="panel-header"><div><span className="panel-kicker">Create</span><h3>New product</h3></div></div>
-                <form className="stack-form" onSubmit={handleCreateProduct}>
+                <div className="panel-header">
+                  <div><span className="panel-kicker">{editingProductId ? 'Maintain' : 'Create'}</span><h3>{editingProductId ? 'Edit product' : 'New product'}</h3></div>
+                  {editingProductId ? <button className="ghost-button" type="button" onClick={resetProductForm}>Cancel</button> : null}
+                </div>
+                <form className="stack-form" onSubmit={handleSaveProduct}>
                   <label>
                     Category
                     <select value={productForm.categoryId} onChange={(event) => setProductForm((previous) => ({ ...previous, categoryId: event.target.value }))} required>
@@ -595,18 +823,44 @@ function App() {
                     <label>SKU<input type="text" value={productForm.sku} onChange={(event) => setProductForm((previous) => ({ ...previous, sku: event.target.value }))} required /></label>
                     <label>Unit price<input type="number" min="0" step="0.01" value={productForm.unitPrice} onChange={(event) => setProductForm((previous) => ({ ...previous, unitPrice: event.target.value }))} required /></label>
                   </div>
-                  <button className="primary-button" type="submit" disabled={isSubmitting || categories.length === 0}>{isSubmitting ? 'Saving...' : 'Save product'}</button>
+                  <button className="primary-button" type="submit" disabled={isSubmitting || categories.length === 0}>{isSubmitting ? 'Saving...' : editingProductId ? 'Update product' : 'Save product'}</button>
                 </form>
+                {categories.length === 0 ? (
+                  <div className="helper-note helper-note--warning">
+                    Create a category first, then return here to register products.
+                  </div>
+                ) : null}
               </article>
 
               <article className="surface nested-surface">
                 <div className="panel-header"><div><span className="panel-kicker">Browse</span><h3>Product inventory</h3></div></div>
                 <input className="search-input" type="search" placeholder="Search by name or SKU" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} />
                 <div className="list-shell">
-                  {filteredProducts.length === 0 ? <div className="empty-state compact">No products found for this filter.</div> : filteredProducts.map((product) => (
-                    <article key={product.id} className="list-card">
-                      <div><strong>{product.name}</strong><p>{product.sku} · {formatCurrency(product.unitPrice)}</p></div>
-                      <span className={`tag ${product.isActive ? 'tag--success' : 'tag--muted'}`}>{product.isActive ? 'Active' : 'Inactive'}</span>
+                  {categories.length === 0 ? (
+                    <div className="empty-state compact">
+                      <strong>Products depend on categories.</strong>
+                      <p>Set up your inventory taxonomy first to keep product data clean.</p>
+                      <button className="ghost-button" type="button" onClick={() => changeSection('categories')}>Go to categories</button>
+                    </div>
+                  ) : products.length === 0 ? (
+                    <div className="empty-state compact">
+                      <strong>No products yet.</strong>
+                      <p>Create the first product to start recording stock activity.</p>
+                    </div>
+                  ) : filteredProducts.length === 0 ? <div className="empty-state compact">No products found for this filter.</div> : filteredProducts.map((product) => (
+                    <article key={product.id} className={`list-card ${editingProductId === product.id ? 'list-card--active' : ''}`}>
+                      <div>
+                        <strong>{product.name}</strong>
+                        <p>{product.sku} · {formatCurrency(product.unitPrice)}</p>
+                        <p>{getCategoryName(product.categoryId)}</p>
+                      </div>
+                      <div className="inline-actions">
+                        <span className={`tag ${product.isActive ? 'tag--success' : 'tag--muted'}`}>{product.isActive ? 'Active' : 'Inactive'}</span>
+                        <button className="ghost-button" type="button" onClick={() => void handleToggleProductStatus(product)} disabled={isSubmitting}>
+                          {product.isActive ? 'Inactivate' : 'Activate'}
+                        </button>
+                        <button className="ghost-button" type="button" onClick={() => startProductEdit(product)}>Edit</button>
+                      </div>
                     </article>
                   ))}
                 </div>
@@ -622,8 +876,8 @@ function App() {
                   <label>
                     Product
                     <select value={movementForm.productId} onChange={(event) => setMovementForm((previous) => ({ ...previous, productId: event.target.value }))} required>
-                      {products.length === 0 ? <option value="">Create a product first</option> : null}
-                      {products.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>)}
+                      {activeProducts.length === 0 ? <option value="">Activate a product first</option> : null}
+                      {activeProducts.map((product) => <option key={product.id} value={product.id}>{product.name} ({product.sku})</option>)}
                     </select>
                   </label>
                   <div className="two-column">
@@ -637,8 +891,17 @@ function App() {
                     <label>Quantity<input type="number" min="1" step="1" value={movementForm.quantity} onChange={(event) => setMovementForm((previous) => ({ ...previous, quantity: event.target.value }))} required /></label>
                   </div>
                   <label>Reason<textarea rows={4} value={movementForm.reason} onChange={(event) => setMovementForm((previous) => ({ ...previous, reason: event.target.value }))} /></label>
-                  <button className="primary-button" type="submit" disabled={isSubmitting || products.length === 0}>{isSubmitting ? 'Recording...' : 'Record movement'}</button>
+                  <button className="primary-button" type="submit" disabled={isSubmitting || activeProducts.length === 0}>{isSubmitting ? 'Recording...' : 'Record movement'}</button>
                 </form>
+                {activeProducts.length === 0 ? (
+                  <div className="helper-note helper-note--warning">
+                    Stock movements require at least one active product.
+                  </div>
+                ) : (
+                  <div className="helper-note">
+                    Only active products are available for new stock movements.
+                  </div>
+                )}
               </article>
 
               <article className="surface nested-surface">
@@ -651,11 +914,17 @@ function App() {
                   </select>
                 </label>
                 <div className="balance-strip">
-                  <div><span>Current balance</span><strong>{balance?.currentBalance ?? 0}</strong></div>
-                  <div><span>History rows</span><strong>{movements.length}</strong></div>
+                  <div><span>Current balance</span><strong>{isLoadingInsights ? '...' : balance?.currentBalance ?? 0}</strong></div>
+                  <div><span>History rows</span><strong>{isLoadingInsights ? '...' : movements.length}</strong></div>
                 </div>
                 <div className="list-shell">
-                  {movements.length === 0 ? <div className="empty-state compact">No movement history for the selected product yet.</div> : movements.map((movement) => (
+                  {products.length === 0 ? (
+                    <div className="empty-state compact">
+                      <strong>No product available for inspection.</strong>
+                      <p>Create a product first to inspect balance and history here.</p>
+                      <button className="ghost-button" type="button" onClick={() => changeSection('products')}>Go to products</button>
+                    </div>
+                  ) : movements.length === 0 ? <div className="empty-state compact">No movement history for the selected product yet.</div> : movements.map((movement) => (
                     <article key={movement.id} className="list-card">
                       <div><strong>{movement.type === 1 ? 'Entry' : 'Exit'}</strong><p>{movement.reason ?? 'No reason provided.'}</p></div>
                       <div className="movement-meta"><span>{movement.quantity} units</span><span>{formatDateTime(movement.occurredAtUtc)}</span></div>
@@ -686,7 +955,7 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
 
   if (!response.ok) {
     const payload = (await safeParseJson(response)) as { detail?: string; title?: string } | null
-    throw new Error(payload?.detail ?? payload?.title ?? `Request failed with status ${response.status}.`)
+    throw new ApiError(response.status, payload?.detail ?? payload?.title ?? `Request failed with status ${response.status}.`)
   }
 
   if (response.status === 204) return undefined as T
@@ -700,6 +969,15 @@ async function safeParseJson(response: Response) {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unexpected error.'
+}
+
+class ApiError extends Error {
+  readonly status: number
+
+  constructor(status: number, message: string) {
+    super(message)
+    this.status = status
+  }
 }
 
 function formatCurrency(value: number) {
