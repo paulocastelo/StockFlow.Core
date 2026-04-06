@@ -25,15 +25,12 @@ public sealed class StockMovementRepository : IStockMovementRepository
             .ToListAsync(cancellationToken);
 
     public async Task<int> GetCurrentBalanceAsync(Guid productId, CancellationToken cancellationToken)
-    {
-        var signedQuantities = await _dbContext.StockMovements
+        => await _dbContext.StockMovements
             .AsNoTracking()
             .Where(movement => movement.ProductId == productId)
-            .Select(movement => movement.Type == StockMovementType.Entry
-                ? movement.Quantity
-                : -movement.Quantity)
-            .ToListAsync(cancellationToken);
-
-        return signedQuantities.Sum();
-    }
+            .SumAsync(
+                movement => movement.Type == StockMovementType.Entry
+                    ? movement.Quantity
+                    : -movement.Quantity,
+                cancellationToken);
 }
