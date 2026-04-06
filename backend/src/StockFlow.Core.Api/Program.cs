@@ -6,6 +6,7 @@ using StockFlow.Core.Application;
 using StockFlow.Core.Api.Middleware;
 using StockFlow.Core.Infrastructure;
 using StockFlow.Core.Infrastructure.Auth;
+using StockFlow.Core.Infrastructure.Persistence.Development;
 
 var builder = WebApplication.CreateBuilder(args);
 const string frontendCorsPolicy = "FrontendDevelopment";
@@ -79,6 +80,13 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
+
+if (args.Contains("--seed-demo-data", StringComparer.OrdinalIgnoreCase))
+{
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<DevelopmentDataSeeder>();
+    await seeder.SeedAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {

@@ -6,6 +6,7 @@ using StockFlow.Core.Application.Abstractions.Auth;
 using StockFlow.Core.Application.Abstractions.Persistence;
 using StockFlow.Core.Infrastructure.Auth;
 using StockFlow.Core.Infrastructure.Persistence;
+using StockFlow.Core.Infrastructure.Persistence.Development;
 using StockFlow.Core.Infrastructure.Persistence.Repositories;
 
 namespace StockFlow.Core.Infrastructure;
@@ -30,6 +31,7 @@ public static class DependencyInjection
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IStockMovementRepository, StockMovementRepository>();
+        services.AddScoped<DevelopmentDataSeeder>();
         services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<StockFlowCoreDbContext>());
 
         return services;
