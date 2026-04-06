@@ -29,9 +29,8 @@ Already completed in the backend:
 
 Still pending for the MVP:
 
-- UX refinement for the web frontend
-- edit and maintenance flows in the web UI
-- stronger end-to-end validation of the browser flows against the local API
+- CI automation for build and test confidence
+- public-facing packaging items such as screenshots and final repository presentation polish
 
 ## Out Of Scope For The First Version
 

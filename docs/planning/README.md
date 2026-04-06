@@ -13,4 +13,4 @@ These planning documents must be updated whenever a major phase or deliverable i
 
 Current focus:
 
-- Phase 5, web frontend MVP
+- Phase 7 preparation, with CI and repository presentation polish

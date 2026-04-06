@@ -172,6 +172,15 @@ Completed work:
 - React + Vite frontend scaffolded
 - JWT-based sign-in and registration flows connected to the API
 - initial screens for categories, products, stock movements, and balance/history built
+- edit flows added for categories and products in the web UI
+- category deletion added to the web UI
+- product activation and inactivation added to the web UI
+- guided empty states and operational readiness cues added to the web UI
+- stock movement entry restricted to active products in the web UI
+- local integration improved with CORS and Vite proxy support
+- local smoke test executed for health, register, and login
+- full local flow validated through the frontend proxy for register, login, category maintenance, product maintenance, stock movements, and balance lookup
+- development seed added for richer local frontend verification
 - frontend build and lint passing
 
 ### Phase 6. Flutter Mobile App
@@ -269,4 +278,4 @@ Repository polished for public presentation.
 
 ## Next Action
 
-The next implementation step should be refining the web frontend MVP for `StockFlow.Core`, including better UX polish, edit flows, and tighter end-to-end integration details.
+The next implementation step should be preparing CI and public-facing repository packaging for `StockFlow.Core`, including screenshots and final repository presentation details.
