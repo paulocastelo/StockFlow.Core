@@ -29,8 +29,7 @@ Already completed in the backend:
 
 Still pending for the MVP:
 
-- CI automation for build and test confidence
-- public-facing packaging items such as screenshots and final repository presentation polish
+- public-facing packaging items such as screenshots, demo assets, and final repository presentation polish
 
 ## Out Of Scope For The First Version
 

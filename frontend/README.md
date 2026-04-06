@@ -26,3 +26,7 @@ If `VITE_API_BASE_URL` is omitted, the Vite dev server will proxy `/api` request
 npm install
 npm run dev
 ```
+
+## CI Validation
+
+The repository CI workflow runs `npm ci`, `npm run lint`, and `npm run build` for this frontend on GitHub Actions.

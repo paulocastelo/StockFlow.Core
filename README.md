@@ -82,6 +82,7 @@ The web frontend is now scaffolded with React + Vite and already includes:
 - stock movement registration
 - balance and movement history lookup
 - JWT session persistence in the browser
+- automated CI validation for backend and frontend on GitHub Actions
 
 ## Frontend Structure
 
@@ -101,3 +102,10 @@ The web frontend is now scaffolded with React + Vite and already includes:
 
 See [docs/backend/LOCAL-SETUP.md](C:/projetos/GitPortfolio/StockFlow.Core/docs/backend/LOCAL-SETUP.md) for PostgreSQL setup, migrations, and API run instructions.
 See [frontend/README.md](C:/projetos/GitPortfolio/StockFlow.Core/frontend/README.md) for frontend setup and environment configuration.
+
+## CI
+
+The repository now includes a GitHub Actions workflow at `.github/workflows/ci.yml` that validates:
+
+- backend restore, build, and test
+- frontend dependency installation, lint, and production build

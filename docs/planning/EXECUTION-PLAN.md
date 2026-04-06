@@ -204,6 +204,8 @@ Exit criteria:
 
 Goal: make the repository presentation-ready.
 
+Status: in progress
+
 Deliverables:
 
 - final README
@@ -213,6 +215,11 @@ Deliverables:
 - screenshots
 - short demo GIF
 - GitHub Actions pipeline
+
+Completed work:
+
+- GitHub Actions CI pipeline added for backend restore, build, test, frontend lint, and frontend build
+- repository documentation updated to describe CI and local frontend validation
 
 Exit criteria:
 
@@ -278,4 +285,4 @@ Repository polished for public presentation.
 
 ## Next Action
 
-The next implementation step should be preparing CI and public-facing repository packaging for `StockFlow.Core`, including screenshots and final repository presentation details.
+The next implementation step should be preparing screenshots, demo assets, and final presentation details for `StockFlow.Core`.
